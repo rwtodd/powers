@@ -1,5 +1,5 @@
-#!/usr/bin/env lua
-function rot13(s)
+local mod = {}
+function mod.rot13(s)
 	return (s:gsub('%a',
 		function(c)
 			c = c:byte()
@@ -7,4 +7,4 @@ function rot13(s)
 		end))
 end
 
-for l in io.lines() do print(rot13(l)) end
+return mod
