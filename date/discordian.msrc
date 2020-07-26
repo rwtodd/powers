@@ -1,23 +1,38 @@
 local days = @.( the discordian days )
 local seasons = @.( the discordian seasons )
-local holidays = @.( the discordian holidays )
+local holydays = @.( the discordian holydays )
+local format_directives = { @.(the format directives) }
 
 local function greg2disc(gregorian)
 	@.(normalize 'gregorian' to a date table)
-	local ans, yday = {}, gregorian.yday - 1
+	local ans = setmetatable({}, { __index = @.(formatting lookup func) })
+	local yday = gregorian.yday - 1  -- zero-based yday
 	ans.year = gregorian.year + 1166
 	@.(adjust around tibs day)
 
-	ans.day = (yday % 73) + 1
-	ans.weekday = (yday % 5) + 1
-	ans.longweekday = days[ans.weekday * 2 - 1]
-	ans.shortweekday = days[ans.weekday * 2]
-	ans.season = (yday // 73) + 1
-	ans.longseason = seasons[ans.season * 2 - 1]
-	ans.shortseason = seasons[ans.season * 2]
-	@.(notice when it is a holiday)
+	if ans.tibs then
+		ans.day, ans.weekday, ans.season = -1, -1, 1
+	else
+		ans.day = (yday % 73) + 1
+		ans.weekday = (yday % 5) + 1
+		ans.season = (yday // 73) + 1
+	end
+
+	-- notice holydays
+	ans.is_holyday = ans.day == 5 or ans.day == 50
+
 	return ans
 end
+
+@./ formatting lookup func / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- lookup the requested format code in the format_directives table,
+-- stripping off the '%' if needed.
+function(t,k)
+	if k:sub(1,1) == '%' then k = k:sub(2) end
+	local f = format_directives[k]
+	return f and f(t)
+end
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @./ normalize 'gregorian' to a date table / ~~~~~~~~~~~~~~~~~~~~~~~~~
 -- we need the os.date() table... so convert a UNIX epoch time to
@@ -30,31 +45,15 @@ end
 
 @./ adjust around tibs day / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- If this is a leap year, and the 60th day (index 59), then it is
--- indeed St. Tib's Day!  Since this day falls outside the normal
--- calendar, we have to special-case the results...
+-- indeed St. Tib's Day!  Adjust yday as needed.
 if (gregorian.year % 4 == 0) and (gregorian.year % 100 ~= 0) then
 	if yday == 59 then
-		local stb                         = holidays.tibs
-		ans.tibs                          = true
-		ans.holiday                       = stb
-		ans.day, ans.weekday              = stb, stb
-		ans.longweekday, ans.shortweekday = stb, stb
-		ans.season                        = 1
-		ans.longseason, ans.shortseason   = seasons[1], seasons[2]
-		return ans
+		ans.tibs = holydays.tibs
 	elseif yday > 59 then
+		-- on years with a St. Tib's day, adjust it away for calculations
+		-- after Tib's.
 		yday = yday - 1
 	end
-end
-@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-@./notice when it is a holiday/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-if ans.day == 5 then
-	ans.holiday = holidays.fives[ans.season]
-elseif ans.day == 50 then
-	ans.holiday = holidays.fifties[ans.season]
-else
-	ans.holiday = nil
 end
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -63,23 +62,54 @@ local function fmt(formatstr, gregorian)
 	if formatstr == '*t' then return disc end
 
 	@.(set a sensible default format)
-	return string.format('%d YOLD',disc.year)
+	@.(adjust the format string based on special days)
+	
+	return (formatstr:gsub('%%.', disc))
 end
 
 @./ set a sensible default format / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- if the user did not supply a format, pick a sensible one based on
+-- the supplied (or not!) date
 if gregorian then
-	formatstr = formatstr or '%{%A, %B %d %}, %Y YOLD'
+	formatstr = formatstr or '%{%A, %B %d%}, %Y YOLD'
 else
-	formatstr = formatstr or 'Today is %{%A, the %e of %B%}, %Y YOLD. %N%nCelebrate %H'
+	formatstr = formatstr or 'Today is %{%A, the %e of %B%}, %Y YOLD. %NCelebrate %H!'
 end
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+@./adjust the format string based on special days / ~~~~~~~~~~~~~~~~~
+-- there are two special format codes, which aren't handled in the
+-- discordian date metatable.  These are %{ ... %} which replaces
+-- everything inside with "St. Tib's Day" on that day, and %N which
+-- erases the rest of the string when it's not a holyday.
+if not disc.tibs then
+	formatstr = formatstr:gsub('%%[{}]','')
+else
+	local bstart = formatstr:find('%%{')
+	while bstart do
+		local bend = formatstr:find('%%}', bstart+2)
+		formatstr = (formatstr:sub(1,bstart-1) .. disc.tibs ..
+			(bend and formatstr:sub(bend+2) or ''))
+		bstart = formatstr:find('%%{')
+	end
+end
+
+-- handle %N now...
+if disc.is_holyday then
+	formatstr = formatstr:gsub('%%N','')
+else 
+	local nstart = formatstr:find('%%N')
+	if nstart then formatstr = formatstr:sub(1,nstart-1) end
+end
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-- we are a module...
 return {
 	date = fmt,
 }
 
 @./ the discordian days/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{ 'Sweetmorn', 'SM',     'BoomTime', 'BT',
+{ 'Sweetmorn', 'SM',     'Boomtime', 'BT',
   'Pungenday', 'PD',     'Prickle-Prickle', 'PP',
   'Setting Orange', 'SO' }
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,12 +119,69 @@ return {
   'Bureaucracy', 'Bcy',  'The Aftermath', 'Afm'  }
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@./ the discordian holidays/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+@./ the discordian holydays/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
 	tibs = "St. Tib's Day",
 	fives = {"Mungday", "Mojoday", "Syaday", "Zaraday", "Maladay"},
 	fifties = { "Chaoflux", "Discoflux", "Confuflux", "Bureflux", "Afflux" }
 }
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@./ the format directives / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- %% a literal percent-sign
+['%'] = function (d) return '%' end,
+
+-- %A the full name of the week
+['A'] = function(d) return d.tibs or days[d.weekday * 2 - 1] end,
+
+-- %a the abbreviated name of the week
+['a'] = function(d) return d.tibs or days[d.weekday * 2] end,
+
+ -- %B the full name of the season (i.e., Chaos)
+['B'] = function (d) return seasons[d.season * 2 - 1] end,
+
+-- %b the abbreviated name of the season (i.e., Chs)
+['b'] = function (d) return seasons[d.season * 2] end,
+
+-- %d the number of day in season (i.e., 23)
+['d'] = function (d) return d.day end,
+
+-- %e the ordinal number of day in season (i.e., 23rd)
+['e'] = function (d) 
+	local digit = d.day % 10
+	local suffix = 'th'
+	if     digit == 1 and d.day ~= 11 then suffix = 'st'
+	elseif digit == 2 and d.day ~= 12 then suffix = 'nd'
+	elseif digit == 3 and d.day ~= 13 then suffix = 'rd'
+	end
+	return tostring(d.day) .. suffix
+end,
+
+-- %H the name of current Holyday, or nil if it's not one
+-- N.B. Tib's day is not a Holyday
+['H'] = function (d) 
+	if d.day == 5 then
+		return holydays.fives[d.season]
+	elseif d.day == 50 then
+		return holydays.fifties[d.season]
+	end
+	return ''
+end,
+
+-- %n a newline
+['n'] = function (d) return '\n' end,
+
+-- %t a tab
+['t'] = function (d) return '\t' end,
+
+-- %X the number of days remaining until X-Day.
+['X'] = function(d) return '<%X not supported>' end,
+
+-- %Y the year
+['Y'] = function(d) return tostring(d.year) end,
+
+-- %. Try it and see!
+['.'] = function(d) return '<%. not supported>' end,
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -- vim: filetype=lua:sw=4:tw=0:noet:ts=4:
