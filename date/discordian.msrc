@@ -1,0 +1,100 @@
+local days = @.( the discordian days )
+local seasons = @.( the discordian seasons )
+local holidays = @.( the discordian holidays )
+
+local function greg2disc(gregorian)
+	@.(normalize 'gregorian' to a date table)
+	local ans, yday = {}, gregorian.yday - 1
+	ans.year = gregorian.year + 1166
+	@.(adjust around tibs day)
+
+	ans.day = (yday % 73) + 1
+	ans.weekday = (yday % 5) + 1
+	ans.longweekday = days[ans.weekday * 2 - 1]
+	ans.shortweekday = days[ans.weekday * 2]
+	ans.season = (yday // 73) + 1
+	ans.longseason = seasons[ans.season * 2 - 1]
+	ans.shortseason = seasons[ans.season * 2]
+	@.(notice when it is a holiday)
+	return ans
+end
+
+@./ normalize 'gregorian' to a date table / ~~~~~~~~~~~~~~~~~~~~~~~~~
+-- we need the os.date() table... so convert a UNIX epoch time to
+-- one if needed.  Default to the current time if nil.
+gregorian = gregorian or os.date('*t')
+if type(gregorian) == 'number' then
+	gregorian = os.date('*t', gregorian)
+end
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@./ adjust around tibs day / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- If this is a leap year, and the 60th day (index 59), then it is
+-- indeed St. Tib's Day!  Since this day falls outside the normal
+-- calendar, we have to special-case the results...
+if (gregorian.year % 4 == 0) and (gregorian.year % 100 ~= 0) then
+	if yday == 59 then
+		local stb                         = holidays.tibs
+		ans.tibs                          = true
+		ans.holiday                       = stb
+		ans.day, ans.weekday              = stb, stb
+		ans.longweekday, ans.shortweekday = stb, stb
+		ans.season                        = 1
+		ans.longseason, ans.shortseason   = seasons[1], seasons[2]
+		return ans
+	elseif yday > 59 then
+		yday = yday - 1
+	end
+end
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@./notice when it is a holiday/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+if ans.day == 5 then
+	ans.holiday = holidays.fives[ans.season]
+elseif ans.day == 50 then
+	ans.holiday = holidays.fifties[ans.season]
+else
+	ans.holiday = nil
+end
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+local function fmt(formatstr, gregorian)
+	local disc = greg2disc(gregorian)
+	if formatstr == '*t' then return disc end
+
+	@.(set a sensible default format)
+	return string.format('%d YOLD',disc.year)
+end
+
+@./ set a sensible default format / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+if gregorian then
+	formatstr = formatstr or '%{%A, %B %d %}, %Y YOLD'
+else
+	formatstr = formatstr or 'Today is %{%A, the %e of %B%}, %Y YOLD. %N%nCelebrate %H'
+end
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+return {
+	date = fmt,
+}
+
+@./ the discordian days/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+{ 'Sweetmorn', 'SM',     'BoomTime', 'BT',
+  'Pungenday', 'PD',     'Prickle-Prickle', 'PP',
+  'Setting Orange', 'SO' }
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@./ the discordian seasons/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+{ 'Chaos', 'Chs', 'Discord', 'Dsc', 'Confusion', 'Cfn', 
+  'Bureaucracy', 'Bcy',  'The Aftermath', 'Afm'  }
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@./ the discordian holidays/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+{
+	tibs = "St. Tib's Day",
+	fives = {"Mungday", "Mojoday", "Syaday", "Zaraday", "Maladay"},
+	fifties = { "Chaoflux", "Discoflux", "Confuflux", "Bureflux", "Afflux" }
+}
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-- vim: filetype=lua:sw=4:tw=0:noet:ts=4:
