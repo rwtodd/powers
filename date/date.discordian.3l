@@ -1,0 +1,124 @@
+.TH date.discordian "3l" "Chaos 50, 3186 YOLD" "Superpowers" "Lua Library"
+
+.SH NAME
+date.discordian \- discordian dates (lua library)
+
+.SH SYNOPSIS
+require
+.RB ' date.discordian '
+
+.SH DESCRIPTION
+date.discordian library for converting Gregorian calendar dates to the
+Discordian calendar.  Most options from the venerable
+.BR ddate (1)
+utility are supported.
+
+.SH FUNCTIONS 
+.PP
+\fBdate\fR([\fIfmt,\fR[\fItime\fR]]) formats the given time according to the given format string,
+both of which can be ommitted.
+.PP
+If the fmt is
+.BR nil ,
+or not given, a default format is provided.  If the fmt argument is provided,
+it can either be:
+.RS
+.IP '*t'
+Similar to lua's
+.BR os.date (),
+this tells the function to return a table of discordian date information.
+The keys provided are 'year', 'season', 'day', 'tibs', 'is_holyday', as well
+as keys for all of the formatting codes listed below, except '%N' and '%{ %}'.
+The formatting keys are provided both with and without the percent prefix.
+.IP "A format string"
+This is a string with embedded formatting codes which expand to aspects of
+the discordian date.  The formatting codes are listed in the section below,
+and examples are given later on.
+.RE
+.PP
+If the time is
+.BR nil ,
+or ommitted, the current time is used.  If it is given, the
+following formats are acceptable:
+.RS
+.IP time-stamp
+A time-stamp (usually given in seconds past an epoch) from a call to
+.BR os.time ()
+can be used (see the examples section below).
+.IP year-yday
+A table with
+.B year
+and 
+.B yday
+(1-366 for the day of the year) is also accepted.
+.RE
+.SH "FORMATTING CODES"
+.IP %A
+Full name of the day of the week (i.e., Sweetmorn)
+.IP %a
+Abbreviated name of the day of the week (i.e., SM)
+.IP %B
+Full name of the season (i.e., Chaos)
+.IP %b
+Abbreviated name of the season (i.e., Chs)
+.IP %d
+Number of day in season (i.e., 23)
+.IP %e
+Ordinal number of day in season (i.e., 23rd)
+.IP %H
+Name of current Holyday, if any
+.IP %N
+Magic code to prevent rest of format from being printed unless today is
+a Holyday.
+.IP %n
+Newline
+.IP %t
+Tab
+\." .IP %X
+\." Number of days remaining until X-Day. (Not valid if the SubGenius options
+\." are not compiled in.)
+.IP "%{ %}"
+Used to enclose the part of the string which is to be replaced with the
+words \*QSt. Tib's Day\*U if the current day is St. Tib's Day.
+\." .IP %\.
+\." Try it and see.
+
+.SH EXAMPLES
+.nf
+.ft CR
+> d = require'date.discordian'
+> d.date()
+Today is Boomtime, the 61st of Confusion, 3186 YOLD.
+
+> d.date("%Y-%b")
+3186-Cfn
+
+> d.date("It's %{%A, the %e of %B%}, %Y. %N%nCelebrate %H",
+>>  os.time{year=1995, month=9, day=26})
+It's Prickle-Prickle, the 50th of Bureaucracy, 3161. 
+Celebrate Bureflux
+
+> d.date("Talk about %{%A, the %e of %B%}, %Y. %N%nCelebrate %H",
+>>  os.time{year=1996, day=29, month=2})
+Talk about St. Tib's Day, 3162.
+
+> tbl = d.date("*t")
+> tbl["%b"]
+Cfn
+.ft P
+.fi
+
+.SH "SEE ALSO"
+.PP
+.BR ddate (1),
+.BR date (1)
+.UR https://en.wikipedia.org/wiki/Discordian_calendar
+Discordian Calendar description on Wikipedia
+.UE
+.SH AUTHOR
+Richard Todd (richard.wesley.todd@gmail.com)
+
+.SH BUGS
+Does not support the %X or %. options of
+.BR ddate (1).
+.\" vim: tw=77:filetype=nroff:noet:
