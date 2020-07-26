@@ -1,18 +1,18 @@
 .TH date.discordian "3l" "Chaos 50, 3186 YOLD" "Superpowers" "Lua Library"
-
+.\" -----------------------------------------------------------------------
 .SH NAME
 date.discordian \- discordian dates (lua library)
-
+.\" -----------------------------------------------------------------------
 .SH SYNOPSIS
 require
 .RB ' date.discordian '
-
+.\" -----------------------------------------------------------------------
 .SH DESCRIPTION
 date.discordian library for converting Gregorian calendar dates to the
 Discordian calendar.  Most options from the venerable
 .BR ddate (1)
 utility are supported.
-
+.\" -----------------------------------------------------------------------
 .SH FUNCTIONS 
 .PP
 \fBdate\fR([\fIfmt,\fR[\fItime\fR]]) formats the given time according to the given format string,
@@ -27,8 +27,8 @@ it can either be:
 Similar to lua's
 .BR os.date (),
 this tells the function to return a table of discordian date information.
-The keys provided are 'year', 'season', 'day', 'tibs', 'is_holyday', as well
-as keys for all of the formatting codes listed below, except '%N' and '%{ %}'.
+The keys provided in the result are 'year', 'season', 'day', 'yday', 'tibs', 'is_holyday',
+as well as keys for all of the formatting codes listed below, except '%N' and '%{ %}'.
 The formatting keys are provided both with and without the percent prefix.
 .IP "A format string"
 This is a string with embedded formatting codes which expand to aspects of
@@ -74,21 +74,20 @@ a Holyday.
 Newline
 .IP %t
 Tab
-\." .IP %X
-\." Number of days remaining until X-Day. (Not valid if the SubGenius options
-\." are not compiled in.)
+.IP %X
+Number of days remaining until X-Day (Cfn 40, 9827)
 .IP "%{ %}"
 Used to enclose the part of the string which is to be replaced with the
 words \*QSt. Tib's Day\*U if the current day is St. Tib's Day.
-\." .IP %\.
-\." Try it and see.
-
+.IP %\.
+Try it and see.
+.\" -----------------------------------------------------------------------
 .SH EXAMPLES
 .nf
 .ft CR
 > d = require'date.discordian'
 > d.date()
-Today is Boomtime, the 61st of Confusion, 3186 YOLD.
+Today is Boomtime, the 61st day of Confusion in the YOLD 3186
 
 > d.date("%Y-%b")
 3186-Cfn
@@ -107,7 +106,7 @@ Talk about St. Tib's Day, 3162.
 Cfn
 .ft P
 .fi
-
+.\" -----------------------------------------------------------------------
 .SH "SEE ALSO"
 .PP
 .BR ddate (1),
@@ -115,10 +114,14 @@ Cfn
 .UR https://en.wikipedia.org/wiki/Discordian_calendar
 Discordian Calendar description on Wikipedia
 .UE
+.\" -----------------------------------------------------------------------
 .SH AUTHOR
 Richard Todd (richard.wesley.todd@gmail.com)
-
+.\" -----------------------------------------------------------------------
 .SH BUGS
-Does not support the %X or %. options of
-.BR ddate (1).
+A peculiar pattern in a mac-and-cheese stain I recently admired told me via
+its persistence that the leap year rules should
+.B not
+diverge from the Gregorian calendar, as some have suggested.  Thus my code
+was Krafted.
 .\" vim: tw=77:filetype=nroff:noet:

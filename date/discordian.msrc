@@ -1,7 +1,12 @@
-local days = @.( the discordian days )
-local seasons = @.( the discordian seasons )
-local holydays = @.( the discordian holydays )
-local format_directives = { @.(the format directives) }
+local days              = { @.( the discordian days )       }
+local seasons           = { @.( the discordian seasons )    }
+local holydays          = { @.( the discordian holydays )   }
+local exclamations      = { @.(the discordian exclamations) }
+local format_directives = { @.(the format directives)       }
+
+local function leap_p(greg_year)
+	return (greg_year%4==0) and (greg_year%100~=0 or greg_year%400==0)
+end
 
 local function greg2disc(gregorian)
 	@.(normalize 'gregorian' to a date table)
@@ -11,8 +16,9 @@ local function greg2disc(gregorian)
 	@.(adjust around tibs day)
 
 	if ans.tibs then
-		ans.day, ans.weekday, ans.season = -1, -1, 1
+		ans.yday, ans.day, ans.weekday, ans.season = -1, -1, -1, 1
 	else
+		ans.yday = yday
 		ans.day = (yday % 73) + 1
 		ans.weekday = (yday % 5) + 1
 		ans.season = (yday // 73) + 1
@@ -46,7 +52,7 @@ end
 @./ adjust around tibs day / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- If this is a leap year, and the 60th day (index 59), then it is
 -- indeed St. Tib's Day!  Adjust yday as needed.
-if (gregorian.year % 4 == 0) and (gregorian.year % 100 ~= 0) then
+if leap_p(gregorian.year) then
 	if yday == 59 then
 		ans.tibs = holydays.tibs
 	elseif yday > 59 then
@@ -70,10 +76,9 @@ end
 @./ set a sensible default format / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- if the user did not supply a format, pick a sensible one based on
 -- the supplied (or not!) date
-if gregorian then
-	formatstr = formatstr or '%{%A, %B %d%}, %Y YOLD'
-else
-	formatstr = formatstr or 'Today is %{%A, the %e of %B%}, %Y YOLD. %NCelebrate %H!'
+if not formatstr then
+	formatstr = (gregorian and '%{%A, %B %d%}, %Y YOLD') or
+		'Today is %{%A, the %e day of %B%} in the YOLD %Y%N%nCelebrate %H'
 end
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -109,22 +114,30 @@ return {
 }
 
 @./ the discordian days/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{ 'Sweetmorn', 'SM',     'Boomtime', 'BT',
-  'Pungenday', 'PD',     'Prickle-Prickle', 'PP',
-  'Setting Orange', 'SO' }
+'Sweetmorn', 'SM',     'Boomtime', 'BT',
+'Pungenday', 'PD',     'Prickle-Prickle', 'PP',
+'Setting Orange', 'SO'
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @./ the discordian seasons/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{ 'Chaos', 'Chs', 'Discord', 'Dsc', 'Confusion', 'Cfn', 
-  'Bureaucracy', 'Bcy',  'The Aftermath', 'Afm'  }
+'Chaos', 'Chs', 'Discord', 'Dsc', 'Confusion', 'Cfn', 
+'Bureaucracy', 'Bcy',  'The Aftermath', 'Afm' 
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @./ the discordian holydays/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{
-	tibs = "St. Tib's Day",
-	fives = {"Mungday", "Mojoday", "Syaday", "Zaraday", "Maladay"},
-	fifties = { "Chaoflux", "Discoflux", "Confuflux", "Bureflux", "Afflux" }
-}
+tibs = "St. Tib's Day",
+fives = {"Mungday", "Mojoday", "Syaday", "Zaraday", "Maladay"},
+fifties = { "Chaoflux", "Discoflux", "Confuflux", "Bureflux", "Afflux" }
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@./ the discordian exclamations/ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Hail Eris!", "All Hail Discordia!", "Kallisti!", "Fnord.", "Or not.",
+"Wibble.", "Pzat!", "P'tang!", "Frink!", "Slack!", 'Praise "Bob"!', "Or kill me.",
+-- randomness, from the Net and other places. Feel free to add (after
+-- checking with the relevant authorities, of course).
+"Grudnuk demand sustenance!", "Keep the Lasagna flying!",
+"You are what you see.", "Or is it?", "This statement is false.",
+"Lies and slander, sire!", "Hee hee hee!", "Hail Eris, Hack Linux!",
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @./ the format directives / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -175,13 +188,50 @@ end,
 ['t'] = function (d) return '\t' end,
 
 -- %X the number of days remaining until X-Day.
-['X'] = function(d) return '<%X not supported>' end,
+['X'] = function(d) @.(count down to X-Day) end,
 
 -- %Y the year
 ['Y'] = function(d) return tostring(d.year) end,
 
 -- %. Try it and see!
-['.'] = function(d) return '<%. not supported>' end,
-@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+['.'] = function(d) return exclamations[math.random(#exclamations)] end,
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@./ count down to X-Day / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- Fnord the ddate.c original source...
+-- /* Code for counting down to X-Day, X-Day being Cfn 40, 3164 
+--  *
+--  * After `X-Day' passed without incident, the CoSG declared that it had 
+--  * got the year upside down --- X-Day is actually in 8661 AD rather than 
+--  * 1998 AD.
+--  *
+--  * Thus, the True X-Day is Cfn 40, 9827.
+--  *
+--  */
+local last_year, cur_year = 8661, d.year - 1166  -- use gregorian years
+local last_yday = 73 + 73 + 40 - 1               -- 0-based yday
+
+-- is it after the end of times?
+if cur_year > last_year then return -1 end
+
+-- is it the final year?
+if cur_year == last_year then
+	return (d.yday > last_yday) and -1 or (last_yday - d.yday)
+end
+
+-- We are prior to 9827 YOLD, so...
+-- start by counting the rest of the days this year, remembering to special-case
+-- TIBS (unlike a certain ddate utility we know)
+local total = d.tibs and (366 - 31 - 28) or 
+	(365 - d.yday) + (leap_p(cur_year) and (d.yday < 59) and 1 or 0)
+cur_year = cur_year + 1
+
+-- count whole years til the end...
+while cur_year < last_year do
+	total = total + 365 + (leap_p(cur_year) and 1 or 0)
+	cur_year = cur_year + 1
+end
+return total + last_yday
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -- vim: filetype=lua:sw=4:tw=0:noet:ts=4:
