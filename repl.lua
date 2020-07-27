@@ -1,7 +1,5 @@
-local repl = {}
-
-function repl.d(tbl)
+local function dump(tbl)
 	for k,v in pairs(tbl) do print(k,v) end
 end
 
-return repl
+return { d=dump }

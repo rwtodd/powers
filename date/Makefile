@@ -6,5 +6,7 @@ check:
 %.lua: %.msrc
 	macsrc < $< > $@
 
-.PHONY: all check
+clean:
+	-rm discordian.lua
+.PHONY: all check clean
 

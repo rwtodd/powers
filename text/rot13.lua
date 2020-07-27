@@ -1,5 +1,4 @@
-local mod = {}
-function mod.rot13(s)
+local function rot13(s)
 	return (s:gsub('%a',
 		function(c)
 			c = c:byte()
@@ -7,4 +6,4 @@ function mod.rot13(s)
 		end))
 end
 
-return mod
+return { rot13=rot13 }

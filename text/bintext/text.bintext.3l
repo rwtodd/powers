@@ -1,16 +1,16 @@
-.TH bintext "3l" "19 February 2017" "Superpowers" "Lua Library"
-
+.TH "text.bintext" "3l" "19 February 2017" "Strength" "Lua Library"
+.\"
 .SH NAME
-bintext \- binary text encodings (lua library)
-
+text.bintext \- binary text encodings (lua library)
+.\"
 .SH SYNOPSIS
 require
-.RB ' bintext '
-
+.RB ' text.bintext '
+.\"
 .SH DESCRIPTION
 bintext is a library for encoding binary strings to text encodings.
 hex-strings and base-64 are provided.
-
+.\"
 .SH FUNCTIONS
 .TP
 .BI b64_encode( str )
@@ -32,9 +32,10 @@ as hex digits and returns the encoded string.
 decodes
 .I str
 from hex digits and returns the binary blob as a string.
-
+.\"
 .SH AUTHOR
 Richard Todd (richard.weslty.todd@gmail.com)
-
+.\"
 .SH BUGS
 Still should add asci85 functions. 
+.\" vim: filetype=nroff:tw=77:noet:
