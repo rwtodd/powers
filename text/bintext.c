@@ -193,7 +193,7 @@ static const struct luaL_Reg btextlib[] = {
   {NULL, NULL}
 };
 
-int luaopen_bintext(lua_State *L) { 
+int luaopen_text_bintext(lua_State *L) { 
    luaL_newlib(L, btextlib); 
    return 1; 
 }

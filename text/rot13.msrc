@@ -7,3 +7,4 @@ local function rot13(s)
 end
 
 return { rot13=rot13 }
+-- vim: filetype=lua:

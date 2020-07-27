@@ -1,4 +1,5 @@
-local bt = require'bintext'
+package.cpath='../?.so;' .. package.cpath
+local bt = require'text.bintext'
 
 print('Should print all true...')
 print(1,bt.hex_encode('abcdefghijk') == '6162636465666768696a6b')

@@ -1,12 +1,9 @@
+@.( define the leap_p leap-year detector )
 local days              = { @.( the discordian days )       }
 local seasons           = { @.( the discordian seasons )    }
 local holydays          = { @.( the discordian holydays )   }
 local exclamations      = { @.(the discordian exclamations) }
 local format_directives = { @.(the format directives)       }
-
-local function leap_p(greg_year)
-	return (greg_year%4==0) and (greg_year%100~=0 or greg_year%400==0)
-end
 
 local function greg2disc(gregorian)
 	@.(normalize 'gregorian' to a date table)
@@ -232,6 +229,14 @@ while cur_year < last_year do
 	cur_year = cur_year + 1
 end
 return total + last_yday
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@./ define the leap_p leap-year detector / ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- the typical gregorian calendar rules:
+--    divisible by 4, but not by 100 unless divisible by 400
+local function leap_p(greg_year)
+	return (greg_year%4==0) and (greg_year%100~=0 or greg_year%400==0)
+end
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -- vim: filetype=lua:sw=4:tw=0:noet:ts=4:
