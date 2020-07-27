@@ -118,10 +118,4 @@ Discordian Calendar description on Wikipedia
 .SH AUTHOR
 Richard Todd (richard.wesley.todd@gmail.com)
 .\" -----------------------------------------------------------------------
-.SH BUGS
-A peculiar pattern in a mac-and-cheese stain I recently admired told me via
-its persistence that the leap year rules should
-.B not
-diverge from the Gregorian calendar, as some have suggested.  Thus my code
-was Krafted.
 .\" vim: tw=77:filetype=nroff:noet:

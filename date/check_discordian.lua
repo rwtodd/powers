@@ -1,4 +1,4 @@
-local d = require'discordian'
+local d = require'date.discordian'
 local tbl = d.date('*t',os.time({year=2020,month=2,day=19}))
 assert(type(tbl) == 'table')
 assert(tbl.Y == '3186')
@@ -20,4 +20,4 @@ assert(d.date('%X',{year=8631,yday=1})=='11143')
 assert(d.date('%X',{year=8621,yday=1})=='14795')
 assert(d.date('%X',{year=8611,yday=1})=='18448')
 assert(d.date('%X',{year=8601,yday=1})=='22100')
-print('OK!')
+print('date.discordian... OK!')
