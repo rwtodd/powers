@@ -205,30 +205,32 @@ end,
 --  * Thus, the True X-Day is Cfn 40, 9827.
 --  *
 --  */
-local last_year, cur_year = 8661, d.year - 1166  -- use gregorian years
-local last_yday = 73 + 73 + 40 - 1               -- 0-based yday
+local year_e, year_s = 8661, d.year - 1166  -- use gregorian years
+local day_e, day_s = 185, d.yday            -- 0-based yday
 
--- is it after the end of times?
-if cur_year > last_year then return -1 end
-
--- is it the final year?
-if cur_year == last_year then
-	return (d.yday > last_yday) and -1 or (last_yday - d.yday)
+-- our yday had been adjusted around Tib's day... undo that...
+if leap_p(year_s) then
+	if day_s >= 59 then day_s = day_s + 1
+	elseif day_s == -1 then day_s = 59
+	end
 end
 
--- We are prior to 9827 YOLD, so...
--- start by counting the rest of the days this year, remembering to special-case
--- TIBS (unlike a certain ddate utility we know)
-local total = d.tibs and (366 - 31 - 28) or 
-	(365 - d.yday) + (leap_p(cur_year) and (d.yday < 59) and 1 or 0)
-cur_year = cur_year + 1
-
--- count whole years til the end...
-while cur_year < last_year do
-	total = total + 365 + (leap_p(cur_year) and 1 or 0)
-	cur_year = cur_year + 1
+-- if the given date is AFTER X-Day, then flip them and remember
+-- we did.
+local flip = false
+if year_e < year_s or year_e == year_s and day_e < day_s then
+	flip = true
+	day_e, day_s = day_s, day_e
+	year_e, year_s = year_s, year_e
 end
-return total + last_yday
+
+local total = 365 * (year_e - year_s) + day_e - day_s
+
+-- Now we need to count leap days...
+for y = year_s,(year_e-1) do
+	total = total + (leap_p(y) and 1 or 0)	
+end
+return total * (flip and -1 or 1) 
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @./ define the leap_p leap-year detector / ~~~~~~~~~~~~~~~~~~~~~~~~~~~
