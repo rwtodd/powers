@@ -224,12 +224,18 @@ if year_e < year_s or year_e == year_s and day_e < day_s then
 	year_e, year_s = year_s, year_e
 end
 
-local total = 365 * (year_e - year_s) + day_e - day_s
-
--- Now we need to count leap days...
-for y = year_s,(year_e-1) do
-	total = total + (leap_p(y) and 1 or 0)	
+-- if the start year is negative, we need to shift both endpoints
+-- up 400 years at a time until it is positive
+while year_s < 0 do
+	year_s = year_s + 400
+	year_e = year_e + 400
 end
+
+local total = (365 * (year_e - year_s) + day_e - day_s
+        + math.ceil(year_e/4) - math.ceil(year_s/4)
+        - math.ceil(year_e/100) + math.ceil(year_s/100)
+        + math.ceil(year_e/400) - math.ceil(year_s/400))
+
 return total * (flip and -1 or 1) 
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
