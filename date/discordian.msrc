@@ -226,15 +226,17 @@ end
 
 -- if the start year is negative, we need to shift both endpoints
 -- up 400 years at a time until it is positive
-while year_s < 0 do
-	year_s = year_s + 400
-	year_e = year_e + 400
+if year_s < 0 then
+	local addend = -400 * (year_s // 400)
+	year_s = year_s + addend
+	year_e = year_e + addend
 end
 
+local ceil = math.ceil
 local total = (365 * (year_e - year_s) + day_e - day_s
-        + math.ceil(year_e/4) - math.ceil(year_s/4)
-        - math.ceil(year_e/100) + math.ceil(year_s/100)
-        + math.ceil(year_e/400) - math.ceil(year_s/400))
+	+ ceil(year_e/4)   - ceil(year_s/4)
+	- ceil(year_e/100) + ceil(year_s/100)
+	+ ceil(year_e/400) - ceil(year_s/400))
 
 return total * (flip and -1 or 1) 
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
