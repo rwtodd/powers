@@ -1,4 +1,4 @@
-@.( define the leap_p leap-year detector )
+local dc = require'date.calculation'
 local days              = { @.( the discordian days )       }
 local seasons           = { @.( the discordian seasons )    }
 local holydays          = { @.( the discordian holydays )   }
@@ -8,17 +8,16 @@ local format_directives = { @.(the format directives)       }
 local function greg2disc(gregorian)
 	@.(normalize 'gregorian' to a date table)
 	local ans = setmetatable({}, { __index = @.(formatting lookup func) })
-	local yday = gregorian.yday - 1  -- zero-based yday
-	ans.year = gregorian.year + 1166
+	local adjusted_yday = gregorian.yday - 1  -- zero-based yday
+	ans.yday, ans.year = gregorian.yday, gregorian.year + 1166
 	@.(adjust around tibs day)
 
 	if ans.tibs then
-		ans.yday, ans.day, ans.weekday, ans.season = -1, -1, -1, 1
+		ans.day, ans.weekday, ans.season = -1, -1, 1
 	else
-		ans.yday = yday
-		ans.day = (yday % 73) + 1
-		ans.weekday = (yday % 5) + 1
-		ans.season = (yday // 73) + 1
+		ans.day     = (adjusted_yday % 73) + 1
+		ans.weekday = (adjusted_yday % 5) + 1
+		ans.season  = (adjusted_yday // 73) + 1
 	end
 
 	-- notice holydays
@@ -49,13 +48,13 @@ end
 @./ adjust around tibs day / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- If this is a leap year, and the 60th day (index 59), then it is
 -- indeed St. Tib's Day!  Adjust yday as needed.
-if leap_p(gregorian.year) then
-	if yday == 59 then
+if dc.is_leap_year(gregorian.year) then
+	if adjusted_yday == 59 then
 		ans.tibs = holydays.tibs
-	elseif yday > 59 then
+	elseif adjusted_yday > 59 then
 		-- on years with a St. Tib's day, adjust it away for calculations
 		-- after Tib's.
-		yday = yday - 1
+		adjusted_yday = adjusted_yday - 1
 	end
 end
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -206,47 +205,19 @@ end,
 --  *
 --  */
 local year_e, year_s = 8661, d.year - 1166  -- use gregorian years
-local day_e, day_s = 185, d.yday            -- 0-based yday
-
--- our yday had been adjusted around Tib's day... undo that...
-if leap_p(year_s) then
-	if day_s >= 59 then day_s = day_s + 1
-	elseif day_s == -1 then day_s = 59
-	end
-end
+local day_e, day_s   = 186,  d.yday            -- 1-based yday
 
 -- if the given date is AFTER X-Day, then flip them and remember
 -- we did.
-local flip = false
+local flip = 1 
 if year_e < year_s or year_e == year_s and day_e < day_s then
-	flip = true
-	day_e, day_s = day_s, day_e
+	flip           = -1
+	day_e, day_s   = day_s, day_e
 	year_e, year_s = year_s, year_e
 end
 
--- if the start year is negative, we need to shift both endpoints
--- up 400 years at a time until it is positive
-if year_s < 0 then
-	local addend = -400 * (year_s // 400)
-	year_s = year_s + addend
-	year_e = year_e + addend
-end
-
-local ceil = math.ceil
-local total = (365 * (year_e - year_s) + day_e - day_s
-	+ ceil(year_e/4)   - ceil(year_s/4)
-	- ceil(year_e/100) + ceil(year_s/100)
-	+ ceil(year_e/400) - ceil(year_s/400))
-
-return total * (flip and -1 or 1) 
+return flip * dc.days_between({year=year_s,yday=day_s},{year=year_e,yday=day_e})
 @. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@./ define the leap_p leap-year detector / ~~~~~~~~~~~~~~~~~~~~~~~~~~~
--- the typical gregorian calendar rules:
---    divisible by 4, but not by 100 unless divisible by 400
-local function leap_p(greg_year)
-	return (greg_year%4==0) and (greg_year%100~=0 or greg_year%400==0)
-end
-@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -- vim: filetype=lua:sw=4:tw=0:noet:ts=4:

@@ -1,0 +1,64 @@
+-- date.calculation library ... calculations on dates
+
+-- the typical gregorian calendar rules:
+--    divisible by 4, but not by 100 unless divisible by 400
+local function is_leap_year(year)
+	return (year%4==0) and (year%100~=0 or year%400==0)
+end
+
+local function normalize_yday(date)
+	if type(date) == 'number' then
+		return os.date('*t',date)
+    elseif type(date) == 'table' then
+		return ((date.year and date.yday) and date or os.date("*t",os.time(date)))
+	end	
+	error(tostring(date) .. " doesn't look like a date!")
+end
+
+-- calculate the days between first and last. If inclusive
+-- is given, then the last day counts, otherwise it does not.
+local function count_days(first,last,inclusive)
+	first,last = normalize_yday(first), normalize_yday(last)
+	local year_s, year_e = first.year, last.year
+
+	@.(adjust to make years positive numbers)
+
+	local ceil = math.ceil
+	return ((inclusive and 1 or 0) +
+		365 * (year_e - year_s) + last.yday - first.yday
+		+ ceil(year_e/4)   - ceil(year_s/4)
+		- ceil(year_e/100) + ceil(year_s/100)
+		+ ceil(year_e/400) - ceil(year_s/400))
+end
+
+@./ adjust to make years positive numbers / ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	-- if the start year is negative, we need to shift both endpoints
+	-- up 400 years at a time until it is positive
+	if year_s < 0 then
+		local addend = -400 * (year_s // 400)
+		year_s = year_s + addend
+		year_e = year_e + addend
+	end
+@. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-- calculate the weekdays between first and last. If inclusive
+-- is given, then the last day counts, otherwise it does not.
+local function count_wkdays(first, last, inclusive)
+	first = normalize_yday(first)
+	local day_count = count_days(first,last,inclusive)
+	local wday = first.wday or os.date("*t",os.time(first)).wday
+	
+	-- wday 1 = sunday, wday 7 = saturday
+	local ceil = math.ceil
+	return  (day_count +
+		ceil((wday + 6)/7) - ceil((wday + 6 + day_count)/7) +
+		ceil(wday/7) - ceil((wday + day_count)/7))
+end
+
+return {
+	is_leap_year     = is_leap_year,
+	days_between     = count_days,
+	weekdays_between = count_wkdays,
+}
+
+-- vim: filetype=lua:noet:ts=4:

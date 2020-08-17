@@ -44,20 +44,21 @@ install_dirs:
 	mkdir -p $(INST_BIN)
 
 # ~~~~ D A T E ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-compile_date: date/discordian.lua
+DATE_LUA=date/calculation.lua date/discordian.lua
+compile_date: $(DATE_LUA)
 
 check_date: compile_date
 	@$(LUACHK) date/check_discordian.lua
 
 install_date: compile_date install_dirs
-	cp date/discordian.lua $(INST_LIB)/date
+	cp $(DATE_LUA) $(INST_LIB)/date
 	gzip -c -9 date/date.discordian.3l > $(INST_MAN)/date.discordian.3l.gz
 	(echo "#!$(LUABASE)/bin/lua"; luac -o - utils/ddate.lua) \
 		> $(INST_BIN)/ddate
 	chmod +x $(INST_BIN)/ddate
 
 clean_date: 
-	rm -f date/discordian.lua
+	rm -f $(DATE_LUA)
 
 
 # ~~~~ T E X T ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
